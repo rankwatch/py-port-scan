@@ -2,6 +2,10 @@
 
 Port Scanner is a python library to scan the mentioned ports of the given IP address.
 
+## Python Version
+
+This library is built on Python 3.7
+
 ## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the Port Scanner.
@@ -25,10 +29,10 @@ mulScan = PortScanner.MultiScan(
 )
 
 # To Scan all the ports ie 0-65535 for the given targets
-mulScan.run_full_scan()
+scan_result = mulScan.run_full_scan()
 
 # To scan the given ports via a secure and unsecure proxy server
-mulScan.run_proxy_scan()
+proxy_scan_result = mulScan.run_proxy_scan()
 ```
 
 ## Contributing
