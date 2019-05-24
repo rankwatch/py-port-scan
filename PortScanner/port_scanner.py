@@ -119,7 +119,7 @@ class Scan:
             self.closed_ports.append(port)
 
     def proxy_scan(self, port: int):
-        
+
         try:
 
             s = socks.socksocket()
@@ -128,9 +128,9 @@ class Scan:
             s.set_proxy(socks.PROXY_TYPE_SOCKS5,
                         self.proxy_ip, self.proxy_port,
                         True)
-            
+
             s.connect((self.target, port))
-            
+
             self.opened += 1
             self.open_ports.append(port)
 
@@ -138,7 +138,7 @@ class Scan:
 
             self.closed += 1
             self.closed_ports.append(port)
-        
+
         finally:
 
             s.close()
@@ -156,7 +156,7 @@ class Scan:
                 List of closed ports
                 Runtime of scan
         """
-        return {"Number of Open Ports": self.opened, 
+        return {"Number of Open Ports": self.opened,
                 "Number of Closed Ports": self.closed,
                 "Opened Ports": self.open_ports,
                 "Closed Ports": self.closed_ports,
@@ -223,7 +223,8 @@ class MultiScan:
 
     """
 
-    def __init__(self, targets, ports=range(65536), threads=100, timeout=3, proxy_ip: list=["127.0.0.1"], proxy_port: list=[80]):
+    def __init__(self, targets, ports=range(65536), threads=100, timeout=3,
+                 proxy_ip: list=["127.0.0.1"], proxy_port: list=[80]):
 
         self.targets = targets
         self.ports = ports
@@ -239,12 +240,12 @@ class MultiScan:
         self.scanners = [Scan(self.targets[i], self.ports, self.threads,
                               self.timeout, self.proxy_ip, self.proxy_port)
                          for i in range(self.job_len)]
-        
+
         self.scan_secure = [Scan(self.targets[i], self.ports, self.threads,
                                  self.timeout, self.proxy_ip[0],
                                  self.proxy_port[0])
                             for i in range(self.job_len)]
-        
+
         self.scan_unsecure = [Scan(self.targets[i], self.ports, self.threads,
                                    self.timeout, self.proxy_ip[1],
                                    self.proxy_port[1])
@@ -312,14 +313,3 @@ class MultiScan:
                 p.join()
 
         self.total_runtime = time.time() - self.total_runtime
-
-
-if __name__ == "__main__":
-    mulScan = MultiScan(["192.99.7.28", "192.168.1.99"], range(100), 100, 1,
-                        ["104.225.218.192", "117.212.95.161"],
-                        [3128, 8080])
-    
-    mulScan.run_proxy_scan(True)
-    mulScan.run_proxy_scan(False)
-
-    print(mulScan.proxy_log)
