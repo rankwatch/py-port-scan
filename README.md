@@ -35,6 +35,15 @@ scan_result = mulScan.run_full_scan()
 proxy_scan_result = mulScan.run_proxy_scan()
 ```
 
+
+##### ToDo
+- [ ] CLI executable script
+- [x] Adding README.txt (reST) for PyPi Page
+- [ ] Bulding doc for PyPi and Git
+- [ ] Specifying [Entry points](https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/creation.html#entry-points) for a standalone application
+- [ ] While reusing the same object a lot of values may be static.  
+
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
