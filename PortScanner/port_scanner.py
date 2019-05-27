@@ -2,9 +2,9 @@ import time
 import socket
 import logging
 import multiprocessing
-import configparser
 import socks
 
+from os import path
 from queue import Queue
 from threading import Thread
 from multiprocessing import Process, cpu_count
@@ -82,10 +82,7 @@ class Scan:
         self._proxy_ip_ = proxy_ip
         self._proxy_port_ = proxy_port
 
-        self._config_ = configparser.ConfigParser()
-        self._config_.read("../CONFIG.ini")
-
-        self._socks_type_ = int(self._config_["SOCKS"]["version"])
+        self.set_socks_type()
 
         self._closed_ = 0
         self._opened_ = 0
@@ -99,8 +96,8 @@ class Scan:
 
     def get_runtime(self):
         return self._runtime_
-    
-    def set_socks_type_(self, socks_type):
+
+    def set_socks_type(self, socks_type=5):
         self._socks_type_ = socks_type
 
     def get_socks_type(self):
@@ -194,11 +191,11 @@ class Scan:
             s.settimeout(self.get_timeout())
             con = s.connect((self.get_target(), port))
 
-            self.set_opened(self.get_opened + 1)
+            self.set_opened(self.get_opened() + 1)
             self.set_open_ports(port)
 
         except Exception as e:
-            self.set_closed(self.get_closed + 1)
+            self.set_closed(self.get_closed() + 1)
             self.set_closed_ports(port)
 
     def proxy_scan(self, port: int) -> None:
@@ -219,12 +216,12 @@ class Scan:
 
             s.connect((self.get_target(), port))
 
-            self.set_opened(self.get_opened + 1)
+            self.set_opened(self.get_opened() + 1)
             self.set_open_ports(port)
 
         except:
 
-            self.set_closed(self.get_closed + 1)
+            self.set_closed(self.get_closed() + 1)
             self.set_closed_ports(port)
 
         finally:
@@ -269,7 +266,7 @@ class Scan:
         pool.map(self.pscan, self.get_ports())
         pool.wait_completion()
 
-        self.set_runtime(time.time() - self.get_runtime())
+        self.set_runtime(round(time.time() - self.get_runtime(), 2))
 
         log[self.get_target()] = self.get_info()
 
@@ -399,7 +396,7 @@ class MultiScan:
 
     def get_job_len(self):
         return self._job_len_
-    
+
     def set_total_runtime(self, total_runtime):
         self._total_runtime_ = total_runtime
 
