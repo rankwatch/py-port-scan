@@ -369,12 +369,12 @@ class MultiScan:
         return self._worker_count_
 
     def get_job_len(self):
-        return self._job_len_
+        return self._job_len_  # TODO: in case of reusing the same object this value will not change.
 
     def get_total_runtime(self):
         return self._total_runtime_
 
-    def get_log(self):
+    def get_log(self):  # TODO: The getters are not in use in your own code.
         return self._log_
 
     def get_proxy_log(self):
@@ -392,7 +392,7 @@ class MultiScan:
         self._total_runtime_ = time.time()
 
         i = 0
-        while (i < self._job_len_):
+        while (i < self._job_len_):  # TODO: You have a getter for this, use it.
             self._worker_pool_ = []
             for _ in range(self._worker_count_):
                 if i >= self._job_len_:
