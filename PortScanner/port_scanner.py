@@ -377,6 +377,9 @@ class MultiScan:
     def get_log(self):
         return self._log_
 
+    def set_proxy_log(self, proxy_log):
+        self._proxy_log_ = proxy_log
+
     def get_proxy_log(self):
         return self._proxy_log_
 
@@ -413,6 +416,8 @@ class MultiScan:
     def run_proxy_scan(self, safe_flag: bool) -> dict:
 
         self._total_runtime_ = time.time()
+
+        self.set_proxy_log(self._manager_.dict())
 
         i = 0
         while i < self._job_len_:
