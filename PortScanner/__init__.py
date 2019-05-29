@@ -1,2 +1,2 @@
-from port_scanner import Scan
-from port_scanner import MultiScan
+from .port_scanner import Scan
+from .port_scanner import MultiScan

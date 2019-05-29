@@ -3,3 +3,4 @@ include README.md
 include CONFIG.ini
 inlcude *.txt
 recursive-include docs *.txt
+include bin/port-scanner.py
