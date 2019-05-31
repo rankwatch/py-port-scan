@@ -85,7 +85,7 @@ class Scan:
         self._config_ = configparser.ConfigParser()
         self._config_.read("../CONFIG.ini")
 
-        self._socks_type_ = int(self._config_["SOCKS"]["version"])
+        # self._socks_type_ = int(self._config_["SOCKS"]["version"])
 
         self._closed_ = 0
         self._opened_ = 0
@@ -95,7 +95,7 @@ class Scan:
         self._runtime_ = 0
 
     def set_socks_type_(self, socks_type):
-        self._socks_type_ = socks_type
+        self._socks_type_ = 5
 
     def get_socks_type(self):
         return self._socks_type_
@@ -369,13 +369,17 @@ class MultiScan:
         return self._worker_count_
 
     def get_job_len(self):
-        return self._job_len_  # TODO: in case of reusing the same object this value will not change.
+        return self._job_len_  # TODO: in case of reusing the
+    # same object this value will not change.
 
     def get_total_runtime(self):
         return self._total_runtime_
 
     def get_log(self):  # TODO: The getters are not in use in your own code.
         return self._log_
+
+    def set_proxy_log(self, proxy_log):
+        self._proxy_log_ = proxy_log
 
     def get_proxy_log(self):
         return self._proxy_log_
@@ -392,7 +396,7 @@ class MultiScan:
         self._total_runtime_ = time.time()
 
         i = 0
-        while (i < self._job_len_):  # TODO: You have a getter for this, use it.
+        while (i < self._job_len_):  # TODO: You have a getter for this, use it
             self._worker_pool_ = []
             for _ in range(self._worker_count_):
                 if i >= self._job_len_:
@@ -413,6 +417,8 @@ class MultiScan:
     def run_proxy_scan(self, safe_flag: bool) -> dict:
 
         self._total_runtime_ = time.time()
+
+        self.set_proxy_log(self._manager_.dict())
 
         i = 0
         while i < self._job_len_:

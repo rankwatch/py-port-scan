@@ -19,5 +19,8 @@ setup(
     packages=['PortScanner'],
     include_package_data=True,
     zip_safe=False,
-    install_requires=[]  # TODO: Add requirements if any.
+    install_requires=[],  # TODO: Add requirements if any.
+    entry_points={
+        'port_scanner': ['port_scanner=bin.port-scanner:main'],
+    }
 )
