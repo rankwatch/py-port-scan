@@ -1,17 +1,18 @@
 import time
 import socket
 import logging
-import multiprocessing
 import socks
+import billiard
 
 from os import path
 from queue import Queue
 from threading import Thread
-from multiprocessing import Process, cpu_count
+from billiard.context import Process
+from billiard import cpu_count
 
 
 class Worker(Thread):
-    def __init__(self, tasks: Queue):
+    def __init__(self, tasks):
         Thread.__init__(self)
         self.tasks = tasks
         self.daemon = True
@@ -56,8 +57,8 @@ class Scan:
 
             target: string - IP Address to scan the ports
             ports: list - List of ports to scan
-            threads: int - Number of threads to use
-            timeout: int - Socket connection timeout in seconds
+            threads - Number of threads to use
+            timeout - Socket connection timeout in seconds
             proxy_ip: list - The proxy IPs to use
             proxy_port: list - Proxy port to use
 
@@ -71,9 +72,9 @@ class Scan:
 
     """
 
-    def __init__(self, target: str, ports: list, threads: int=100,
-                 timeout: int=3, proxy_ip: list=["127.0.0.1", "127.0.0.1"],
-                 proxy_port: list=[80, 80]):
+    def __init__(self, target, ports, threads=100,
+                 timeout=3, proxy_ip=["127.0.0.1", "127.0.0.1"],
+                 proxy_port=[80, 80]):
 
         self._target_ = target
         self._no_of_threads_ = threads
@@ -169,7 +170,7 @@ class Scan:
     def set_closed(self, closed):
         self._closed_ = closed
 
-    def pscan(self, port: int) -> None:
+    def pscan(self, port):
 
         """
 
@@ -178,7 +179,7 @@ class Scan:
 
             Arguments:
 
-                port: int - Port to try connecting to
+                port - Port to try connecting to
 
             Example:
 
@@ -198,7 +199,7 @@ class Scan:
             self.set_closed(self.get_closed() + 1)
             self.set_closed_ports(port)
 
-    def proxy_scan(self, port: int) -> None:
+    def proxy_scan(self, port):
 
         try:
 
@@ -228,7 +229,7 @@ class Scan:
 
             s.close()
 
-    def get_info(self) -> dict:
+    def get_info(self):
 
         """
             Return the class variables essential after the scanning
@@ -247,7 +248,7 @@ class Scan:
                 "Closed Ports": self.get_closed_ports(),
                 "Runtime": self.get_runtime()}
 
-    def run(self, log: dict) -> None:
+    def run(self, log):
 
         """
 
@@ -256,7 +257,7 @@ class Scan:
 
             Arguments:
 
-                log: dict - The shared dictionary among all the threads
+                log - The shared dictionary among all the threads
 
         """
 
@@ -270,7 +271,7 @@ class Scan:
 
         log[self.get_target()] = self.get_info()
 
-    def run_proxy(self, proxy_log: dict, flag: bool) -> None:
+    def run_proxy(self, proxy_log, flag):
 
         self.set_runtime(time.time())
         pool = ThreadPool(self._no_of_threads_)
@@ -297,8 +298,8 @@ class MultiScan:
 
             target: list - List of IP Addresses
             ports: list - List of ports to scan
-            threads: int - Number of threads to use
-            timeout: int - Socket connection timeout in seconds
+            threads - Number of threads to use
+            timeout - Socket connection timeout in seconds
             proxy_ip: list - The proxy IPs to use
             proxy_port: list - Proxy port to use
 
@@ -310,8 +311,8 @@ class MultiScan:
     """
 
     def __init__(self, targets, ports=range(65536), threads=100, timeout=3,
-                 proxy_ip: list=["127.0.0.1", "127.0.0.1"],
-                 proxy_port: list=[80, 80]):
+                 proxy_ip=["127.0.0.1", "127.0.0.1"],
+                 proxy_port=[80, 80]):
 
         self._targets_ = targets
         self._ports_ = ports
@@ -342,10 +343,9 @@ class MultiScan:
                                      self._proxy_port_[1])
                                 for i in range(self._job_len_)]
 
-        self._manager_ = multiprocessing.Manager()
+        self._manager_ = billiard.Manager()
         self._log_ = self._manager_.dict()
         self._proxy_log_ = self._manager_.dict()
-
         self._total_runtime_ = 0
 
     def set_targets(self, targets):
@@ -409,7 +409,7 @@ class MultiScan:
     def get_proxy_log(self):
         return self._proxy_log_
 
-    def run_full_scan(self) -> dict:
+    def run_full_scan(self):
 
         """
 
@@ -440,7 +440,7 @@ class MultiScan:
         self.set_total_runtime(time.time() - self.get_total_runtime())
         return self.get_log()
 
-    def run_proxy_scan(self, safe_flag: bool) -> dict:
+    def run_proxy_scan(self, safe_flag):
 
         self.set_total_runtime(time.time())
 
