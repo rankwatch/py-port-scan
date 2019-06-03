@@ -2,8 +2,6 @@ import argparse
 import sys
 import os
 
-sys.path.insert(0, "PortScanner/")
-
 from port_scanner import MultiScan
 
 
