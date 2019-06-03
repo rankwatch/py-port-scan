@@ -108,3 +108,9 @@ venv.bak/
 
 # RDB
 dump.rdb
+
+# Database
+.DS_Store
+
+# Pycharm
+vcs.xml

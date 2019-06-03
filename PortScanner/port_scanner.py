@@ -395,7 +395,8 @@ class MultiScan:
         self._job_len_ = job_len
 
     def get_job_len(self):
-        return self._job_len_
+        return self._job_len_  # TODO: in case of reusing the
+    # same object this value will not change.
 
     def set_total_runtime(self, total_runtime):
         self._total_runtime_ = total_runtime
@@ -403,8 +404,11 @@ class MultiScan:
     def get_total_runtime(self):
         return self._total_runtime_
 
-    def get_log(self):
+    def get_log(self):  # TODO: The getters are not in use in your own code.
         return self._log_
+
+    def set_proxy_log(self, proxy_log):
+        self._proxy_log_ = proxy_log
 
     def get_proxy_log(self):
         return self._proxy_log_
@@ -443,6 +447,8 @@ class MultiScan:
     def run_proxy_scan(self, safe_flag):
 
         self.set_total_runtime(time.time())
+
+        self.set_proxy_log(self._manager_.dict())
 
         i = 0
         while i < self.get_job_len():
