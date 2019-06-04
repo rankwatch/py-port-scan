@@ -106,5 +106,11 @@ venv.bak/
 # vscode
 .vscode
 
-#run
-PortScanner/run.py
+# RDB
+dump.rdb
+
+# Database
+.DS_Store
+
+# Pycharm
+vcs.xml

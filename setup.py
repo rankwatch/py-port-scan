@@ -10,17 +10,18 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Topic :: Networking :: Port Scanning',
     ],
-    scripts=['bin/port-scanner.py'],
+    scripts=['bin/port_scanner_script.py'],
     keywords='port scanning monitoring network optimisation',
     url='https://github.com/rankwatch/py-port-scan/',
     author='Hari Ram, Aaditya Verma, Rankwatch, Sarthak Sawhney',
-    author_email='hari16csu135@ncuindia.edu, aadityaverma1998@gmail.com, support@rankwatch.com, sarthaksahni@gmail.com',
+    author_email='hari16csu135@ncuindia.edu, aadityaverma1998@gmail.com,\
+                  support@rankwatch.com, sarthaksahni@gmail.com',
     license='GPL v3',
-    packages=['PortScanner'],
+    packages=['py_port_scan'],
     include_package_data=True,
     zip_safe=False,
-    install_requires=[],  # TODO: Add requirements if any.
+    install_requires=['billiard'],
     entry_points={
-        'port_scanner': ['port_scanner=bin.port-scanner:main'],
+        'console_scripts': ['port_scanner=bin.port_scanner_script:main'],
     }
 )

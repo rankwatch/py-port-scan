@@ -1,17 +1,18 @@
 import time
 import socket
 import logging
-import multiprocessing
-import configparser
 import socks
+import billiard
 
+from os import path
 from queue import Queue
 from threading import Thread
-from multiprocessing import Process, cpu_count
+from billiard.context import Process
+from billiard import cpu_count
 
 
 class Worker(Thread):
-    def __init__(self, tasks: Queue):
+    def __init__(self, tasks):
         Thread.__init__(self)
         self.tasks = tasks
         self.daemon = True
@@ -56,8 +57,8 @@ class Scan:
 
             target: string - IP Address to scan the ports
             ports: list - List of ports to scan
-            threads: int - Number of threads to use
-            timeout: int - Socket connection timeout in seconds
+            threads - Number of threads to use
+            timeout - Socket connection timeout in seconds
             proxy_ip: list - The proxy IPs to use
             proxy_port: list - Proxy port to use
 
@@ -71,9 +72,9 @@ class Scan:
 
     """
 
-    def __init__(self, target: str, ports: list, threads: int=100,
-                 timeout: int=3, proxy_ip: list=["127.0.0.1", "127.0.0.1"],
-                 proxy_port: list=[80, 80]):
+    def __init__(self, target, ports, threads=100,
+                 timeout=3, proxy_ip=["127.0.0.1", "127.0.0.1"],
+                 proxy_port=[80, 80]):
 
         self._target_ = target
         self._no_of_threads_ = threads
@@ -82,10 +83,7 @@ class Scan:
         self._proxy_ip_ = proxy_ip
         self._proxy_port_ = proxy_port
 
-        self._config_ = configparser.ConfigParser()
-        self._config_.read("../CONFIG.ini")
-
-        # self._socks_type_ = int(self._config_["SOCKS"]["version"])
+        self.set_socks_type()
 
         self._closed_ = 0
         self._opened_ = 0
@@ -94,8 +92,14 @@ class Scan:
 
         self._runtime_ = 0
 
-    def set_socks_type_(self, socks_type):
-        self._socks_type_ = 5
+    def set_runtime(self, runtime):
+        self._runtime_ = runtime
+
+    def get_runtime(self):
+        return self._runtime_
+
+    def set_socks_type(self, socks_type=5):
+        self._socks_type_ = socks_type
 
     def get_socks_type(self):
         return self._socks_type_
@@ -139,16 +143,34 @@ class Scan:
     def get_open_ports(self):
         return self._open_ports_
 
+    def set_open_ports(self, op_list, method="a"):
+        if method is "a":
+            self._open_ports_.append(op_list)
+        elif method is "d":
+            self._open_ports_[:] = []
+
     def get_opened(self):
         return self._opened_
+
+    def set_opened(self, opened):
+        self._opened_ = opened
 
     def get_closed_ports(self):
         return self._closed_ports_
 
+    def set_closed_ports(self, op_list, method="a"):
+        if method is "a":
+            self._closed_ports_.append(op_list)
+        elif method is "d":
+            self._closed_ports_[:] = []
+
     def get_closed(self):
         return self._closed_
 
-    def pscan(self, port: int) -> None:
+    def set_closed(self, closed):
+        self._closed_ = closed
+
+    def pscan(self, port):
 
         """
 
@@ -157,7 +179,7 @@ class Scan:
 
             Arguments:
 
-                port: int - Port to try connecting to
+                port - Port to try connecting to
 
             Example:
 
@@ -167,47 +189,47 @@ class Scan:
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(self._timeout_)
-            con = s.connect((self._target_, port))
+            s.settimeout(self.get_timeout())
+            con = s.connect((self.get_target(), port))
 
-            self._opened_ += 1
-            self._open_ports_.append(port)
+            self.set_opened(self.get_opened() + 1)
+            self.set_open_ports(port)
 
         except Exception as e:
-            self._closed_ += 1
-            self._closed_ports_.append(port)
+            self.set_closed(self.get_closed() + 1)
+            self.set_closed_ports(port)
 
-    def proxy_scan(self, port: int) -> None:
+    def proxy_scan(self, port):
 
         try:
 
             s = socks.socksocket()
-            s.settimeout(self._timeout_)
+            s.settimeout(self.get_timeout())
 
-            if self._socks_type_ == 5:
+            if self.get_socks_type() == 5:
                 s.set_proxy(socks.PROXY_TYPE_SOCKS5,
-                            self._proxy_ip_, self._proxy_port_,
+                            self.get_proxy_ip(), self.get_proxy_port(),
                             True)
-            elif self._socks_type_ == 4:
+            elif self.get_socks_type() == 4:
                 s.set_proxy(socks.PROXY_TYPE_SOCKS4,
-                            self._proxy_ip_, self._proxy_port_,
+                            self.get_proxy_ip(), self.get_proxy_port(),
                             True)
 
-            s.connect((self._target_, port))
+            s.connect((self.get_target(), port))
 
-            self._opened_ += 1
-            self._open_ports_.append(port)
+            self.set_opened(self.get_opened() + 1)
+            self.set_open_ports(port)
 
         except:
 
-            self._closed_ += 1
-            self._closed_ports_.append(port)
+            self.set_closed(self.get_closed() + 1)
+            self.set_closed_ports(port)
 
         finally:
 
             s.close()
 
-    def get_info(self) -> dict:
+    def get_info(self):
 
         """
             Return the class variables essential after the scanning
@@ -220,13 +242,13 @@ class Scan:
                 List of closed ports
                 Runtime of scan
         """
-        return {"Number of Open Ports": self._opened_,
-                "Number of Closed Ports": self._closed_,
-                "Opened Ports": self._open_ports_,
-                "Closed Ports": self._closed_ports_,
-                "Runtime": self._runtime_}
+        return {"Number of Open Ports": self.get_opened(),
+                "Number of Closed Ports": self.get_closed(),
+                "Opened Ports": self.get_open_ports(),
+                "Closed Ports": self.get_closed_ports(),
+                "Runtime": self.get_runtime()}
 
-    def run(self, log: dict) -> None:
+    def run(self, log):
 
         """
 
@@ -235,31 +257,32 @@ class Scan:
 
             Arguments:
 
-                log: dict - The shared dictionary among all the threads
+                log - The shared dictionary among all the threads
 
         """
 
-        self._runtime_ = time.time()
+        self.set_runtime(time.time())
         pool = ThreadPool(self._no_of_threads_)
 
-        pool.map(self.pscan, self._ports_)
+        pool.map(self.pscan, self.get_ports())
         pool.wait_completion()
 
-        self._runtime_ = time.time() - self._runtime_
+        self.set_runtime(round(time.time() - self.get_runtime(), 2))
 
-        log[self._target_] = self.get_info()
+        log[self.get_target()] = self.get_info()
 
-    def run_proxy(self, proxy_log: dict, flag: bool) -> None:
+    def run_proxy(self, proxy_log, flag):
 
-        self._runtime_ = time.time()
+        self.set_runtime(time.time())
         pool = ThreadPool(self._no_of_threads_)
 
         pool.map(self.proxy_scan, self._ports_)
         pool.wait_completion()
 
-        self._runtime_ = time.time() - self._runtime_
+        self.set_runtime(time.time() - self.get_runtime())
 
-        proxy_log[self._proxy_ip_ + "::" + self._target_] = self.get_info()
+        proxy_log[self.get_proxy_ip() + "::" +
+                  self.get_target()] = self.get_info()
 
 
 class MultiScan:
@@ -275,8 +298,8 @@ class MultiScan:
 
             target: list - List of IP Addresses
             ports: list - List of ports to scan
-            threads: int - Number of threads to use
-            timeout: int - Socket connection timeout in seconds
+            threads - Number of threads to use
+            timeout - Socket connection timeout in seconds
             proxy_ip: list - The proxy IPs to use
             proxy_port: list - Proxy port to use
 
@@ -288,8 +311,8 @@ class MultiScan:
     """
 
     def __init__(self, targets, ports=range(65536), threads=100, timeout=3,
-                 proxy_ip: list=["127.0.0.1", "127.0.0.1"],
-                 proxy_port: list=[80, 80]):
+                 proxy_ip=["127.0.0.1", "127.0.0.1"],
+                 proxy_port=[80, 80]):
 
         self._targets_ = targets
         self._ports_ = ports
@@ -320,14 +343,14 @@ class MultiScan:
                                      self._proxy_port_[1])
                                 for i in range(self._job_len_)]
 
-        self._manager_ = multiprocessing.Manager()
+        self._manager_ = billiard.Manager()
         self._log_ = self._manager_.dict()
         self._proxy_log_ = self._manager_.dict()
-
         self._total_runtime_ = 0
 
     def set_targets(self, targets):
         self._targets_ = targets
+        self.set_job_len(len(targets))
 
     def get_targets(self):
         return self._targets_
@@ -368,9 +391,15 @@ class MultiScan:
     def get_worker_count(self):
         return self._worker_count_
 
+    def set_job_len(self, job_len):
+        self._job_len_ = job_len
+
     def get_job_len(self):
         return self._job_len_  # TODO: in case of reusing the
     # same object this value will not change.
+
+    def set_total_runtime(self, total_runtime):
+        self._total_runtime_ = total_runtime
 
     def get_total_runtime(self):
         return self._total_runtime_
@@ -384,7 +413,7 @@ class MultiScan:
     def get_proxy_log(self):
         return self._proxy_log_
 
-    def run_full_scan(self) -> dict:
+    def run_full_scan(self):
 
         """
 
@@ -393,16 +422,17 @@ class MultiScan:
 
         """
 
-        self._total_runtime_ = time.time()
+        self.set_total_runtime(time.time())
 
         i = 0
-        while (i < self._job_len_):  # TODO: You have a getter for this, use it
+        while i < self.get_job_len():
             self._worker_pool_ = []
-            for _ in range(self._worker_count_):
-                if i >= self._job_len_:
+            for _ in range(self.get_worker_count()):
+                if i >= self.get_job_len():
                     break
 
-                p = Process(target=self._scanners_[i].run, args=(self._log_,))
+                p = Process(target=self._scanners_[i].run,
+                            args=(self.get_log(),))
                 p.start()
                 self._worker_pool_.append(p)
 
@@ -411,28 +441,28 @@ class MultiScan:
             for p in self._worker_pool_:
                 p.join()
 
-        self._total_runtime_ = time.time() - self._total_runtime_
-        return self._log_
+        self.set_total_runtime(time.time() - self.get_total_runtime())
+        return self.get_log()
 
-    def run_proxy_scan(self, safe_flag: bool) -> dict:
+    def run_proxy_scan(self, safe_flag):
 
-        self._total_runtime_ = time.time()
+        self.set_total_runtime(time.time())
 
         self.set_proxy_log(self._manager_.dict())
 
         i = 0
-        while i < self._job_len_:
+        while i < self.get_job_len():
             self._worker_pool_ = []
             for _ in range(self._worker_count_):
-                if i >= self._job_len_:
+                if i >= self.get_job_len():
                     break
 
                 if safe_flag:
                     p = Process(target=self._scan_secure_[i].run_proxy,
-                                args=(self._proxy_log_, True))
+                                args=(self.get_proxy_log(), True))
                 else:
                     p = Process(target=self._scan_unsecure_[i].run_proxy,
-                                args=(self._proxy_log_, True))
+                                args=(self.get_proxy_log(), True))
 
                 p.start()
                 self._worker_pool_.append(p)
@@ -442,5 +472,5 @@ class MultiScan:
             for p in self._worker_pool_:
                 p.join()
 
-        self._total_runtime_ = time.time() - self._total_runtime_
-        return self._proxy_log_
+        self.set_total_runtime(time.time() - self.get_total_runtime())
+        return self.get_proxy_log()
